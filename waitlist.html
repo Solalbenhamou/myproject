@@ -260,7 +260,7 @@
     </div>
     
     <script>
-    // ⚠️ URL de la Netlify Function (pas besoin de la changer, elle est automatique)
+    // URL de la Netlify Function
     const WEBHOOK_URL = '/.netlify/functions/waitlist';
     
     // Récupérer l'email depuis l'URL
@@ -273,6 +273,8 @@
             console.error('No email provided in URL');
             return;
         }
+        
+        console.log('📧 Adding email to waitlist:', email);
         
         try {
             const response = await fetch(WEBHOOK_URL, {
@@ -303,6 +305,6 @@
     if (email) {
         addToWaitlist(email);
     }
-</script>
+    </script>
 </body>
 </html>
