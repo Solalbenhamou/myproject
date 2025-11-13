@@ -1,123 +1,262 @@
-#!/usr/bin/env python3
-import os
-import argparse
-import pandas as pd
-import matplotlib.pyplot as plt
-from google.cloud import bigquery
-from pytz import timezone
-
-def fetch_predictions(client):
-    """
-    Récupère toutes les prédictions de churn depuis BigQuery.
-    """
-    sql = """
-    SELECT
-      shop_id,
-      run_date,
-      proba_churn,
-      group_number
-    FROM
-      `warehouse-459819.Predictions.prediction_group_enriched`
-    """
-    return client.query(sql).to_dataframe()
-
-def fetch_shop_ids(client, shop_name):
-    """
-    Récupère les shop_id correspondant au nom de l'entreprise (insensible à la casse).
-    """
-    sql = """
-    SELECT shop_id
-    FROM `warehouse-459819.analytics_test.stg_shop`
-    WHERE LOWER(shop_name) = LOWER(@shop_name)
-    """
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("shop_name", "STRING", shop_name)
-        ]
-    )
-    return client.query(sql, job_config=job_config).to_dataframe()
-
-def process_shop(df_preds, shop_id, shop_name, threshold, output_dir):
-    """
-    Filtre les données pour un shop donné, trace et enregistre les résultats.
-    """
-    # Conversion de la date et timezone
-    tz = timezone('Asia/Jerusalem')
-    df = df_preds.copy()
-    df['run_date'] = pd.to_datetime(df['run_date']).dt.tz_localize(tz, ambiguous='NaT')
-    today = pd.Timestamp.now(tz).normalize()
-
-    # Filtrer sur la journée courante
-    mask = (
-        (df['shop_id'] == shop_id) &
-        (df['run_date'] >= today) &
-        (df['run_date'] < today + pd.Timedelta(days=1))
-    )
-    df_today = df.loc[mask]
-
-    # Compter les proba_churn > seuil par group_number
-    counts_over = (
-        df_today
-        .groupby('group_number')['proba_churn']
-        .apply(lambda s: (s > threshold).sum())
-        .loc[lambda s: s > 0]
-    )
-    if counts_over.empty:
-        print(f"Aucun churn > {threshold*100:.0f}% pour {shop_name} (ID:{shop_id})")
-        return
-
-    # Tracé et enregistrement
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.bar(counts_over.index.astype(str), counts_over.values)
-    ax.set(
-        xlabel='Group Number',
-        ylabel=f"Clients (proba_churn > {threshold*100:.0f}%)",
-        title=f"{shop_name} (ID:{shop_id}) — churn > {threshold*100:.0f}%"
-    )
-    fig.tight_layout()
-
-    # Sauvegarde
-    png_path = os.path.join(output_dir, f"{shop_name}_{shop_id}_churn.png")
-    csv_path = os.path.join(output_dir, f"{shop_name}_{shop_id}_churn_counts.csv")
-    fig.savefig(png_path)
-    counts_over.to_csv(csv_path, header=['count'])
-    plt.close(fig)
-
-    print(f"Résultats enregistrés : {png_path}, {csv_path}")
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Analyse quotidienne du churn par groupe pour un shop donné"
-    )
-    parser.add_argument(
-        '--shop_name', required=True,
-        help="Nom de l'entreprise (insensible à la casse)"
-    )
-    parser.add_argument(
-        '--threshold_pct', type=float, required=True,
-        help="Seuil de churn en pourcentage (ex: 80 pour 80%)"
-    )
-    parser.add_argument(
-        '--output_dir', default='outputs',
-        help="Dossier de destination pour les fichiers générés"
-    )
-    args = parser.parse_args()
-
-    os.makedirs(args.output_dir, exist_ok=True)
-
-    # Le client BigQuery utilisera GOOGLE_APPLICATION_CREDENTIALS et GCP_PROJECT
-    project = os.getenv('GCP_PROJECT')
-    client = bigquery.Client(project=project)
-
-    df_preds = fetch_predictions(client)
-    df_shops = fetch_shop_ids(client, args.shop_name)
-    if df_shops.empty:
-        print(f"Aucun shop_id trouvé pour '{args.shop_name}'")
-        return
-
-    threshold = args.threshold_pct / 100
-    for sid in df_shops['shop_id']:
-        process_shop(df_preds, sid, args.shop_name, threshold, args.output_dir)
-
-if __name__ == '__main__':
-    main()
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You're In - AI Agent Waitlist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0A0A0A;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background: linear-gradient(180deg, #1A1A1A 0%, #0F0F0F 100%);
+            border-radius: 24px;
+            border: 1px solid #2A2A2A;
+            max-width: 800px;
+            width: 100%;
+            padding: 80px 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        .glow {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, transparent 70%);
+            top: -250px;
+            right: -250px;
+            pointer-events: none;
+        }
+        .logo {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 60px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            background: #22C55E;
+            border-radius: 6px;
+        }
+        .status-badge {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22C55E;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-size: 56px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 20px;
+            line-height: 1.1;
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #A0A0A0;
+            margin-bottom: 60px;
+            line-height: 1.5;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 50px 0;
+        }
+        .feature-card {
+            background: rgba(34, 197, 94, 0.05);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            background: rgba(34, 197, 94, 0.08);
+            border-color: rgba(34, 197, 94, 0.4);
+            transform: translateY(-2px);
+        }
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .feature-card p {
+            font-size: 15px;
+            color: #808080;
+            line-height: 1.5;
+        }
+        .timeline {
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 40px;
+            border-radius: 16px;
+            margin: 50px 0;
+        }
+        .timeline h2 {
+            font-size: 24px;
+            color: white;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        .timeline-item {
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .timeline-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .timeline-item strong {
+            display: block;
+            font-size: 16px;
+            color: #22C55E;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .timeline-item span {
+            font-size: 15px;
+            color: #A0A0A0;
+            line-height: 1.5;
+        }
+        .cta-section {
+            margin-top: 50px;
+            padding-top: 50px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .cta-section p {
+            font-size: 16px;
+            color: #A0A0A0;
+            margin-bottom: 24px;
+        }
+        .email-button {
+            display: inline-block;
+            background: #22C55E;
+            color: #0A0A0A;
+            font-weight: 600;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+        .email-button:hover {
+            background: #16A34A;
+            transform: translateY(-1px);
+        }
+        .footer {
+            margin-top: 50px;
+            font-size: 14px;
+            color: #606060;
+            text-align: center;
+        }
+        .limit-badge {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22C55E;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            margin-top: 30px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 50px 30px;
+            }
+            h1 {
+                font-size: 40px;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .timeline {
+                padding: 30px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="glow"></div>
+        <div class="logo">
+            <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" stroke="#22C55E" stroke-width="8" fill="none" stroke-dasharray="220 60"/>
+                <text x="50" y="70" text-anchor="middle" fill="#22C55E" font-size="60" font-weight="700" font-family="Arial, sans-serif">S</text>
+                <path d="M70 25 L70 45 M60 35 L80 35" stroke="#22C55E" stroke-width="8" stroke-linecap="round"/>
+            </svg>
+            Subscribfy
+        </div>
+        <div class="status-badge">Confirmed</div>
+        <h1>You're in.</h1>
+        <p class="subtitle">
+            Welcome to the AI Agent early access program. You'll be among the first 50 Shopify merchants to experience intelligent store monitoring.
+        </p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Zero-noise monitoring</h3>
+                <p>Only get alerted when something statistically significant happens to your store</p>
+            </div>
+            <div class="feature-card">
+                <h3>AI-powered explanations</h3>
+                <p>Every alert comes with context: what happened, why it matters, what to check</p>
+            </div>
+            <div class="feature-card">
+                <h3>Instant Slack alerts</h3>
+                <p>No more checking dashboards. Critical issues come straight to your team</p>
+            </div>
+            <div class="feature-card">
+                <h3>Smart analytics</h3>
+                <p>Your store's patterns, seasonality, and trends automatically learned</p>
+            </div>
+        </div>
+        <div class="timeline">
+            <h2>What happens next</h2>
+            <div class="timeline-item">
+                <strong>Week 1-6</strong>
+                <span>We're finishing the final builds and testing with beta users</span>
+            </div>
+            <div class="timeline-item">
+                <strong>Week 6-8</strong>
+                <span>You'll receive an email with your private installation link, 2 months completely free, and white-glove onboarding with our team</span>
+            </div>
+        </div>
+        <div class="limit-badge">
+            Limited to 50 merchants
+        </div>
+        <div class="cta-section">
+            <p>Questions? We're here to help.</p>
+            <a href="mailto:support@subscribfy.com" class="email-button">Contact Us</a>
+        </div>
+        <div class="footer">
+            The Subscribfy Team
+        </div>
+    </div>
+</body>
+</html>
