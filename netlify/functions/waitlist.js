@@ -81,32 +81,3 @@ exports.handler = async (event) => {
     };
   }
 };
-```
-
-**Commit ce changement.**
-
----
-
-## **Test 2 : Vérifier les logs Netlify**
-
-1. Va sur **Netlify → Functions**
-2. Clique sur **"waitlist"**
-3. Clique sur l'onglet **"Logs"** ou **"Function log"**
-4. Teste à nouveau : `https://capable-brioche-ca1de0.netlify.app/waitlist.html?email=test@test.com`
-5. **Regarde les logs** - tu devrais voir tous les `console.log`
-
-**Dis-moi ce que tu vois dans les logs !**
-
----
-
-## **Test 3 : Vérifier l'URL du webhook n8n**
-
-### **Dans ton workflow n8n :**
-
-1. Clique sur **NODE 1 (Webhook POST)**
-2. Vérifie que le **Path** est bien : `waiting-list`
-3. Copie l'URL complète affichée sous **"Production URL"**
-
-**Elle devrait être exactement :**
-```
-https://n8n-943439003979.us-central1.run.app/webhook-test/waiting-list
