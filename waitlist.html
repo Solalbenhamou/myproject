@@ -123,3 +123,186 @@
         .timeline-item {
             margin-bottom: 24px;
             padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .timeline-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .timeline-item strong {
+            display: block;
+            font-size: 16px;
+            color: #22C55E;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .timeline-item span {
+            font-size: 15px;
+            color: #A0A0A0;
+            line-height: 1.5;
+        }
+        .cta-section {
+            margin-top: 50px;
+            padding-top: 50px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .cta-section p {
+            font-size: 16px;
+            color: #A0A0A0;
+            margin-bottom: 24px;
+        }
+        .email-button {
+            display: inline-block;
+            background: #22C55E;
+            color: #0A0A0A;
+            font-weight: 600;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+        .email-button:hover {
+            background: #16A34A;
+            transform: translateY(-1px);
+        }
+        .footer {
+            margin-top: 50px;
+            font-size: 14px;
+            color: #606060;
+            text-align: center;
+        }
+        .limit-badge {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22C55E;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            margin-top: 30px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 50px 30px;
+            }
+            h1 {
+                font-size: 40px;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .timeline {
+                padding: 30px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="glow"></div>
+        <div class="logo">
+            <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" stroke="#22C55E" stroke-width="8" fill="none" stroke-dasharray="220 60"/>
+                <text x="50" y="70" text-anchor="middle" fill="#22C55E" font-size="60" font-weight="700" font-family="Arial, sans-serif">S</text>
+                <path d="M70 25 L70 45 M60 35 L80 35" stroke="#22C55E" stroke-width="8" stroke-linecap="round"/>
+            </svg>
+            Subscribfy
+        </div>
+        <div class="status-badge">Confirmed</div>
+        <h1>You're in.</h1>
+        <p class="subtitle">
+            Welcome to the AI Agent early access program. You'll be among the first 50 Shopify merchants to experience intelligent store monitoring.
+        </p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Zero-noise monitoring</h3>
+                <p>Only get alerted when something statistically significant happens to your store</p>
+            </div>
+            <div class="feature-card">
+                <h3>AI-powered explanations</h3>
+                <p>Every alert comes with context: what happened, why it matters, what to check</p>
+            </div>
+            <div class="feature-card">
+                <h3>Instant Slack alerts</h3>
+                <p>No more checking dashboards. Critical issues come straight to your team</p>
+            </div>
+            <div class="feature-card">
+                <h3>Smart analytics</h3>
+                <p>Your store's patterns, seasonality, and trends automatically learned</p>
+            </div>
+        </div>
+        <div class="timeline">
+            <h2>What happens next</h2>
+            <div class="timeline-item">
+                <strong>Week 1-6</strong>
+                <span>We're finishing the final builds and testing with beta users</span>
+            </div>
+            <div class="timeline-item">
+                <strong>Week 6-8</strong>
+                <span>You'll receive an email with your private installation link, 2 months completely free, and white-glove onboarding with our team</span>
+            </div>
+        </div>
+        <div class="limit-badge">
+            Limited to 50 merchants
+        </div>
+        <div class="cta-section">
+            <p>Questions? We're here to help.</p>
+            <a href="mailto:support@subscribfy.com" class="email-button">Contact Us</a>
+        </div>
+        <div class="footer">
+            The Subscribfy Team
+        </div>
+    </div>
+    
+    <script>
+        // ⚠️ REMPLACE PAR TON URL WEBHOOK N8N (récupérée après activation du workflow)
+        const WEBHOOK_URL = 'https://TON-N8N.app.n8n.cloud/webhook/waitlist';
+        
+        // Récupérer l'email depuis l'URL (?email=test@example.com)
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+        
+        // Fonction pour ajouter à la waitlist
+        async function addToWaitlist(email) {
+            if (!email) {
+                console.error('No email provided in URL');
+                return;
+            }
+            
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        source: 'email_click',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    console.log('✅ Successfully added to waitlist:', email);
+                } else {
+                    console.error('❌ Failed to add to waitlist:', data);
+                }
+            } catch (error) {
+                console.error('❌ Error adding to waitlist:', error);
+            }
+        }
+        
+        // Ajouter automatiquement au chargement de la page
+        if (email) {
+            addToWaitlist(email);
+        }
+    </script>
+</body>
+</html>
