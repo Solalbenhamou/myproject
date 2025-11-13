@@ -1,0 +1,8 @@
+{
+  "name": "subscribfy-waitlist",
+  "version": "1.0.0",
+  "description": "Waitlist page for Subscribfy",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
