@@ -39,7 +39,7 @@ exports.handler = async (event) => {
       };
     }
 
-    const n8nUrl = 'https://n8n-943439003979.us-central1.run.app/webhook-test/waitinglist';
+    const n8nUrl = 'https://n8n-943439003979.us-central1.run.app/webhook/waitinglist';
     console.log('Calling n8n at:', n8nUrl);
     
     const payload = {
