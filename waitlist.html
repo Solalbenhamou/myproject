@@ -329,7 +329,7 @@
                 Limited to 50 merchants
             </div>
             <div class="email-form">
-                <input type="email" id="friendEmail" placeholder="Invite a friend" class="email-input">
+                <input type="email" id="friendEmail" placeholder="Sign up for the waitlist with your email." class="email-input">
                 <button onclick="inviteFriend()" class="invite-button">Send</button>
             </div>
         </div>
@@ -424,7 +424,7 @@
             const data = await response.json();
             
             if (response.ok && data.success) {
-                showMessage('✅ Invitation sent successfully!', 'success');
+                showMessage('✅ Successfully added to the waitlist!', 'success');
                 friendEmailInput.value = '';
             } else {
                 showMessage('❌ Failed to send invitation. Please try again.', 'error');
