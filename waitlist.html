@@ -183,7 +183,70 @@
             border-radius: 10px;
             font-weight: 500;
             font-size: 14px;
+        }
+        .invite-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
             margin-top: 30px;
+        }
+        .email-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .email-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: white;
+            font-size: 14px;
+            width: 240px;
+            transition: all 0.3s;
+        }
+        .email-input:focus {
+            outline: none;
+            border-color: #22C55E;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .email-input::placeholder {
+            color: #606060;
+        }
+        .invite-button {
+            background: #22C55E;
+            color: #0A0A0A;
+            font-weight: 600;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .invite-button:hover {
+            background: #16A34A;
+            transform: translateY(-1px);
+        }
+        .invite-button:disabled {
+            background: #404040;
+            color: #808080;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .invite-message {
+            font-size: 13px;
+            margin-top: 10px;
+            text-align: center;
+            width: 100%;
+        }
+        .invite-message.success {
+            color: #22C55E;
+        }
+        .invite-message.error {
+            color: #EF4444;
         }
         @media (max-width: 768px) {
             .container {
@@ -198,6 +261,20 @@
             }
             .timeline {
                 padding: 30px 24px;
+            }
+            .invite-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .email-form {
+                width: 100%;
+                flex-direction: column;
+            }
+            .email-input {
+                width: 100%;
+            }
+            .invite-button {
+                width: 100%;
             }
         }
     </style>
@@ -247,9 +324,16 @@
                 <span>You'll receive an email with your private installation link, 2 months completely free, and white-glove onboarding with our team</span>
             </div>
         </div>
-        <div class="limit-badge">
-            Limited to 50 merchants
+        <div class="invite-container">
+            <div class="limit-badge">
+                Limited to 50 merchants
+            </div>
+            <div class="email-form">
+                <input type="email" id="friendEmail" placeholder="Invite a friend" class="email-input">
+                <button onclick="inviteFriend()" class="invite-button">Send</button>
+            </div>
         </div>
+        <div id="inviteMessage" class="invite-message"></div>
         <div class="cta-section">
             <p>Questions? We're here to help.</p>
             <a href="mailto:eva.b@subscribfy.com?subject=Question%20about%20Subscribfy%20AI%20Agent&body=Hi%20Subscribfy%20team%2C%0D%0A%0D%0AI%27m%20interested%20in%20the%20AI%20Agent%20early%20access%20program.%0D%0A%0D%0AMy%20question%20is%3A%0D%0A%0D%0A" class="email-button">Contact Us</a>
@@ -300,6 +384,79 @@
             console.error('❌ Error adding to waitlist:', error);
         }
     }
+    
+    // Fonction pour inviter un ami
+    async function inviteFriend() {
+        const friendEmailInput = document.getElementById('friendEmail');
+        const friendEmail = friendEmailInput.value.trim();
+        const inviteButton = document.querySelector('.invite-button');
+        const messageDiv = document.getElementById('inviteMessage');
+        
+        // Validation de l'email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!friendEmail) {
+            showMessage('Please enter an email address', 'error');
+            return;
+        }
+        if (!emailRegex.test(friendEmail)) {
+            showMessage('Please enter a valid email address', 'error');
+            return;
+        }
+        
+        // Désactiver le bouton pendant l'envoi
+        inviteButton.disabled = true;
+        inviteButton.textContent = 'Sending...';
+        
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: friendEmail,
+                    source: 'friend_invite',
+                    invited_by: email || 'unknown',
+                    timestamp: new Date().toISOString()
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                showMessage('✅ Invitation sent successfully!', 'success');
+                friendEmailInput.value = '';
+            } else {
+                showMessage('❌ Failed to send invitation. Please try again.', 'error');
+            }
+        } catch (error) {
+            console.error('❌ Error inviting friend:', error);
+            showMessage('❌ Network error. Please try again.', 'error');
+        } finally {
+            inviteButton.disabled = false;
+            inviteButton.textContent = 'Send';
+        }
+    }
+    
+    // Fonction pour afficher les messages
+    function showMessage(text, type) {
+        const messageDiv = document.getElementById('inviteMessage');
+        messageDiv.textContent = text;
+        messageDiv.className = `invite-message ${type}`;
+        
+        // Effacer le message après 5 secondes
+        setTimeout(() => {
+            messageDiv.textContent = '';
+            messageDiv.className = 'invite-message';
+        }, 5000);
+    }
+    
+    // Permettre l'envoi avec la touche Enter
+    document.getElementById('friendEmail').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            inviteFriend();
+        }
+    });
     
     // Ajouter automatiquement au chargement de la page
     if (email) {
